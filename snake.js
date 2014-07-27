@@ -18,6 +18,12 @@ var scoreText;
 var showFrame = false;
 var availableXpos = [];
 var availableYpos = [];
+var refresh = false;
+var keyboardInput = null
+var gTicks = 400;
+
+// This happens when the timer ticks and the head of snake to left == LEFT_EDGE, down > DOWN_EDGE, right == RIGHT_EDGE
+var errorCorrection = 1;
 
 function preload() {
 	game.stage.backgroundColor = '#98ED00';
@@ -32,6 +38,7 @@ function create() {
 	initFood();
 
 	scoreText = game.add.text(10, 566, 'Score : ' + score, { fontSize: '30px', fill: '#fff' });
+
 }
 
 function genAvailableFoodPositions() {
@@ -68,26 +75,6 @@ function initSnake() {
 		snake.push(snakePart);
 	}
 }
-
-/*function initSnake() {
-	var i;
-	var head;
-	var body;
-
-// Create snake group with all of its parts
-	snake = game.add.group();
-	for(i = 0; i <= snakeLength - 1; i++) {
-		if (i === snakeLength - 1) {
-			head = snake.create(i * grid, 0, 'snakeHead');
-			head.body.velocity.x = +velocity;
-		}
-		else {
-			body = snake.create(i * grid, 0, 'snakeBody');
-			body.body.velocity.x = +velocity;
-		}
-	}
-}*/
-
 
 function initFood() {
 	var x;
@@ -131,53 +118,21 @@ function moveHeadPosition() {
 	}
 }
 
-/*function moveHeadPosition() {
-	var nextElem;
-//could be done better?
-	snake._container.children.forEach(function(item, index) {
-		if (index + 1 < snakeLength) {
-			nextElem = snake._container.children[index + 1];
-			if (nextElem) {
-				//another solution
-				// item.body.velocity.x = nextElem.body.velocity.x;
-				// item.body.velocity.y = nextElem.body.velocity.y;
-				item.body.x = nextElem.body.x;
-				item.body.y = nextElem.body.y;
-			}
-		}
-		else if (index + 1 === snakeLength) {
-			if (direction === 'left') {
-				item.body.velocity.x = -velocity;
-			}
-			else if (direction === 'right') {
-				item.body.velocity.x = velocity;
-			}
-			else if (direction === 'down') {
-				item.body.velocity.y = velocity;
-			}
-			else if (direction === 'up') {
-				item.body.velocity.y = -velocity;
-			}
-		}
-	});
-}*/
-
-
 function detectCollision() {
 	//could be done better? not sure if 100% works
 	//detect collision with boundaries
-	if ((snake[snakeLength - 1].body.x + grid) >= game.width
-		|| ((snake[snakeLength - 1].body.x) <= 0)
+	if ((snake[snakeLength - 1].body.x) >= game.width
+		|| ((snake[snakeLength - 1].body.x + grid) <= 0)
 		|| ((snake[snakeLength - 1].body.y + grid) <= 0)
-		|| ((snake[snakeLength - 1].body.y + grid) >= game.height)) {
-		play = false;
+		|| ((snake[snakeLength - 1].body.y ) >= game.height)) {
+        play = false;
 	}
 	//detect collision with snake parts
 	snake.forEach(function(item, index) {
 		if (index !== (snakeLength - 1)
 			&& ((snake[snakeLength - 1].body.x) === item.body.x)
 			&& ((snake[snakeLength - 1].body.y) === item.body.y)) {
-			play = false;
+            play = false;
 			return false;
 		}
 	});
@@ -200,25 +155,63 @@ function foodCollisionHandler(snakeHead, food) {
 	scoreText.setText('Score : ' + score);
 }
 
+function gameStart()
+{
+    updateRefresh();
+}
+
+function updateRefresh()
+{
+    refresh = true;
+    setTimeout(function(){updateRefresh(); }, gTicks);
+}
+
 function update() {
+
+    if( game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR) )
+    {
+        updateRefresh();
+    }
+
+    if ( keyboardInput == null)
+    {
+        if( game.input.keyboard.isDown(Phaser.Keyboard.LEFT) )
+            keyboardInput = 'left';
+
+        if( game.input.keyboard.isDown(Phaser.Keyboard.DOWN) )
+            keyboardInput = 'down';
+
+        if( game.input.keyboard.isDown(Phaser.Keyboard.RIGHT) )
+            keyboardInput = 'right';
+
+        if( game.input.keyboard.isDown(Phaser.Keyboard.UP) )
+            keyboardInput = 'up';
+    }
+
 	if (showFrame) {
 		if (play) {
-			if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT) && direction !== 'right')
+
+            if ( !refresh )
+                return;
+
+			if (keyboardInput == 'left' && direction !== 'right')
 			{
 				direction = 'left';
 			}
-			else if (game.input.keyboard.isDown(Phaser.Keyboard.DOWN) && direction !== 'up')
+			else if (keyboardInput == 'down' && direction !== 'up')
 			{
 				direction = 'down';
 			}
-			else if (game.input.keyboard.isDown(Phaser.Keyboard.UP) && direction !== 'down')
+			else if (keyboardInput == 'up' && direction !== 'down')
 			{
 				direction = 'up';
 			}
-			else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT) && direction !== 'left')
+			else if (keyboardInput == 'right' && direction !== 'left')
 			{
 				direction = 'right';
 			}
+
+            keyboardInput = null;
 
 			moveHeadPosition();
 
@@ -231,6 +224,8 @@ function update() {
 
 			//detect collision with boundaries or snake part
 			detectCollision();
+            refresh = false;
+            errorCorrection = 1;
 		}
 		else {
 			game.stage.backgroundColor = '#FF4540';
