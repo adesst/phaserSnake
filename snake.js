@@ -22,9 +22,6 @@ var refresh = false;
 var keyboardInput = null
 var gTicks = 400;
 
-// This happens when the timer ticks and the head of snake to left == LEFT_EDGE, down > DOWN_EDGE, right == RIGHT_EDGE
-var errorCorrection = 1;
-
 function preload() {
 	game.stage.backgroundColor = '#98ED00';
 	game.load.image('snakeBody', 'img/snake.gif');
